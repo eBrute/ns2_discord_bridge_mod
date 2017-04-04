@@ -1,9 +1,9 @@
-name        = "Discord Bridge"
+name        = "[Shine] Discord Bridge"
 source_dir  = "source"
 output_dir  = "output"
 description = [=[Allows linking between NS2 Game Chat and Discord
-modid: 358dba81]=]
+modid: 358e0fb5]=]
 image       = "preview.jpg"
 tag_modtype = "Tool"
 tag_support = "Must be run on Server"
-publish_id = "358dba81"
+publish_id = "358e0fb5"
