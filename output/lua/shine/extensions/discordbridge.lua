@@ -118,8 +118,11 @@ end
 
 function Plugin:PlayerSay(client, message)
 	if not message.teamOnly and message.message ~= "" then
+        local player = client:GetControllingPlayer()
         local payload = {
-            player = client:GetControllingPlayer().name,
+            player = player:GetName(),
+            steamid = player:GetSteamId(),
+            teamnumber = player:GetTeamNumber(),
             message = message.message
         }
         self:SendToDiscord("chat", payload)
@@ -129,20 +132,28 @@ end
 
 function Plugin:ClientConfirmConnect(client)
     if self.Config.SendPlayerJoin then
+        local player = client:GetControllingPlayer()
         local numPlayers = Server.GetNumPlayers()
         local maxPlayers = Server.GetMaxPlayers()
-        local playerName = client:GetPlayer():GetName()
-        self:SendToDiscord("status", {message = "Player '" .. playerName .. "' joined (" ..numPlayers .. "/" .. maxPlayers .. ")"})
+        self:SendToDiscord("playerjoin", {
+            player = player:GetName(),
+            steamid = player:GetSteamId(),
+            message = "(" ..numPlayers .. "/" .. maxPlayers .. ")"
+        })
     end
 end
 
 
 function Plugin:ClientDisconnect(client)
     if self.Config.SendPlayerLeave then
+        local player = client:GetControllingPlayer()
         local numPlayers = Server.GetNumPlayers() - 1
         local maxPlayers = Server.GetMaxPlayers()
-        local playerName = client:GetPlayer():GetName()
-        self:SendToDiscord("status", {message = "Player '" .. playerName .. "' left  (" ..numPlayers .. "/" .. maxPlayers .. ")"})
+        self:SendToDiscord("playerleave", {
+            player = player:GetName(),
+            steamid = player:GetSteamId(),
+            message = "(" ..numPlayers .. "/" .. maxPlayers .. ")"
+        })
     end
 end
 
