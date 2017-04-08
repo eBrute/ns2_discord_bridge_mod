@@ -22,7 +22,7 @@ Plugin.DefaultConfig = {
     SendRoundPregame = false,
     SendRoundStart = true,
     SendRoundEnd = true,
-    SendAdminPrint = true,
+    SendAdminPrint = false,
 }
 
 
@@ -41,10 +41,10 @@ function Plugin:Initialise()
 
     if self.Config.SendAdminPrint then
         self:SimpleTimer( 0.5, function()
-            local OldServerAdminPrint = ServerAdminPrint
+            self.OldServerAdminPrint = ServerAdminPrint
             function ServerAdminPrint(client, message)
-                OldServerAdminPrint(client, message)
-                Plugin.SendToDiscord(self, "adminprint", {message = message})
+                self.OldServerAdminPrint(client, message)
+                Plugin.SendToDiscord(self, "adminprint", {msg = message})
             end
         end)
     end
@@ -57,16 +57,16 @@ end
 
 
 function Plugin:HandleDiscordChatMessage(data)
-    local chatMessage = string.UTF8Sub(data.content, 1, kMaxChatLength)
+    local chatMessage = string.UTF8Sub(data.msg, 1, kMaxChatLength)
     if not chatMessage or string.len(chatMessage) <= 0 then return end
     local playerName = data.user
     if not playerName then return end
-    Shine:Notify( nil, "Discord" , playerName, chatMessage )
+    Shine:NotifyDualColour(nil, 114, 137, 218, "(Discord) " .. playerName .. ":", 170, 170, 170, chatMessage)
 end
 
 
 function Plugin:HandleDiscordRconMessage(data)
-    Shared.ConsoleCommand(data.content)
+    Shared.ConsoleCommand(data.msg)
 end
 
 
@@ -98,7 +98,7 @@ end
 
 function Plugin:SendToDiscord(type, payload)
     local params = {
-        server = self.Config.ServerIdentifier,
+        id = self.Config.ServerIdentifier,
         type = type,
     }
     for k, v in pairs(payload) do
@@ -120,10 +120,10 @@ function Plugin:PlayerSay(client, message)
 	if not message.teamOnly and message.message ~= "" then
         local player = client:GetControllingPlayer()
         local payload = {
-            player = player:GetName(),
-            steamid = player:GetSteamId(),
-            teamnumber = player:GetTeamNumber(),
-            message = message.message
+            plyr = player:GetName(),
+            sid = player:GetSteamId(),
+            team = player:GetTeamNumber(),
+            msg = message.message
         }
         self:SendToDiscord("chat", payload)
 	end
@@ -136,9 +136,9 @@ function Plugin:ClientConfirmConnect(client)
         local numPlayers = Server.GetNumPlayers()
         local maxPlayers = Server.GetMaxPlayers()
         self:SendToDiscord("playerjoin", {
-            player = player:GetName(),
-            steamid = player:GetSteamId(),
-            message = "(" ..numPlayers .. "/" .. maxPlayers .. ")"
+            plyr = player:GetName(),
+            sid = player:GetSteamId(),
+            msg = "(" ..numPlayers .. "/" .. maxPlayers .. ")"
         })
     end
 end
@@ -150,9 +150,9 @@ function Plugin:ClientDisconnect(client)
         local numPlayers = Server.GetNumPlayers() - 1
         local maxPlayers = Server.GetMaxPlayers()
         self:SendToDiscord("playerleave", {
-            player = player:GetName(),
-            steamid = player:GetSteamId(),
-            message = "(" ..numPlayers .. "/" .. maxPlayers .. ")"
+            plyr = player:GetName(),
+            sid = player:GetSteamId(),
+            msg = "(" ..numPlayers .. "/" .. maxPlayers .. ")"
         })
     end
 end
@@ -167,36 +167,40 @@ function Plugin:SetGameState(GameRules, NewState, OldState)
     local playerCount = " (" .. numPlayers .. "/" .. maxPlayers .. ")"
 
     if self.Config.SendMapChange and CurState == 'NotStarted' and roundTime < 5 then
-        self:SendToDiscord("status", {message = "Changed map to " .. mapName .. playerCount})
+        self:SendToDiscord("status", {msg = "Changed map to " .. mapName .. playerCount})
     end
 
     if self.Config.SendRoundWarmup and CurState == 'WarmUp' then
-        self:SendToDiscord("status", {message = "WarmUp started on " .. mapName .. playerCount})
+        self:SendToDiscord("status", {msg = "WarmUp started on " .. mapName .. playerCount})
     end
 
     if self.Config.SendRoundPreGame and CurState == 'PreGame' then
-        self:SendToDiscord("status", {message = "PreGame started on " .. mapName .. playerCount})
+        self:SendToDiscord("status", {msg = "PreGame started on " .. mapName .. playerCount})
     end
 
     if self.Config.SendRoundStart and CurState == 'Started' then
-        self:SendToDiscord("status", {message = "Round started on " .. mapName .. playerCount})
+        self:SendToDiscord("status", {msg = "Round started on " .. mapName .. playerCount})
     end
 
     if self.Config.SendRoundEnd then
         if CurState == 'Team1Won' then
-            self:SendToDiscord("status", {message = "Marines won on " .. mapName .. playerCount})
+            self:SendToDiscord("status", {msg = "Marines won on " .. mapName .. playerCount})
         elseif CurState == 'Team2Won' then
-            self:SendToDiscord("status", {message = "Aliens won on " .. mapName .. playerCount})
+            self:SendToDiscord("status", {msg = "Aliens won on " .. mapName .. playerCount})
         elseif CurState == 'Draw' then
-            self:SendToDiscord("status", {message = "Draw on " .. mapName .. playerCount})
+            self:SendToDiscord("status", {msg = "Draw on " .. mapName .. playerCount})
         end
     end
 end
 
 
 function Plugin:Cleanup()
-    self.BaseClass.Cleanup( self )
 
+    if self.Config.SendAdminPrint then
+        ServerAdminPrint = self.OldServerAdminPrint
+    end
+
+    self.BaseClass.Cleanup( self )
     self.Enabled = false
 end
 
