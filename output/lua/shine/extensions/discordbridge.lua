@@ -5,7 +5,7 @@
 local Shine = Shine
 local Plugin = {}
 
-Plugin.Version = "1.0"
+Plugin.Version = "2.1.1"
 Plugin.HasConfig = true --Does this plugin have a config file?
 Plugin.ConfigName = "DiscordBridge.json" --What's the name of the file?
 Plugin.DefaultState = true --Should the plugin be enabled when it is first added to the config?
@@ -49,6 +49,9 @@ function Plugin:Initialise()
         end)
     end
 
+    Log("Discord Bridge Version %s loaded", Plugin.Version)
+    self.StartTime = os.clock()
+
     self:OpenConnection()
 
     self.Enabled = true
@@ -61,7 +64,7 @@ function Plugin:HandleDiscordChatMessage(data)
     if not chatMessage or string.len(chatMessage) <= 0 then return end
     local playerName = data.user
     if not playerName then return end
-    Shine:NotifyDualColour(nil, 114, 137, 218, "(Discord) " .. playerName .. ":", 170, 170, 170, chatMessage)
+    Shine:NotifyDualColour(nil, 114, 137, 218, "(Discord) " .. playerName .. ":", 181, 172, 229, chatMessage)
 end
 
 
@@ -131,9 +134,11 @@ end
 
 
 function Plugin:ClientConfirmConnect(client)
-    if self.Config.SendPlayerJoin then
+    if self.Config.SendPlayerJoin
+        and (os.clock() - self.StartTime) > 120 -- prevent overflow
+    then
         local player = client:GetControllingPlayer()
-        local numPlayers = Server.GetNumPlayers()
+        local numPlayers = Server.GetNumPlayersTotal()
         local maxPlayers = Server.GetMaxPlayers()
         self:SendToDiscord("playerjoin", {
             plyr = player:GetName(),
@@ -147,7 +152,7 @@ end
 function Plugin:ClientDisconnect(client)
     if self.Config.SendPlayerLeave then
         local player = client:GetControllingPlayer()
-        local numPlayers = Server.GetNumPlayers() - 1
+        local numPlayers = Server.GetNumPlayersTotal() - 1
         local maxPlayers = Server.GetMaxPlayers()
         self:SendToDiscord("playerleave", {
             plyr = player:GetName(),
@@ -161,13 +166,13 @@ end
 function Plugin:SetGameState(GameRules, NewState, OldState)
     local CurState = kGameState[NewState]
     local mapName = "'" .. Shared.GetMapName() .. "'"
-    local numPlayers = Server.GetNumPlayers()
+    local numPlayers = Server.GetNumPlayersTotal()
     local maxPlayers = Server.GetMaxPlayers()
     local roundTime = Shared.GetTime()
     local playerCount = " (" .. numPlayers .. "/" .. maxPlayers .. ")"
 
     if self.Config.SendMapChange and CurState == 'NotStarted' and roundTime < 5 then
-        self:SendToDiscord("status", {msg = "Changed map to " .. mapName .. playerCount})
+        self:SendToDiscord("status", {msg = "Changed map to " .. mapName})
     end
 
     if self.Config.SendRoundWarmup and CurState == 'WarmUp' then
