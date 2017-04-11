@@ -140,7 +140,7 @@ function Plugin:ClientConfirmConnect(client)
         local player = client:GetControllingPlayer()
         local numPlayers = Server.GetNumPlayersTotal()
         local maxPlayers = Server.GetMaxPlayers()
-        self:SendToDiscord("playerjoin", {
+        self:SendToDiscord("player", {
             sub = "join",
             plyr = player:GetName(),
             sid = player:GetSteamId(),
@@ -155,7 +155,7 @@ function Plugin:ClientDisconnect(client)
         local player = client:GetControllingPlayer()
         local numPlayers = Server.GetNumPlayersTotal() - 1
         local maxPlayers = Server.GetMaxPlayers()
-        self:SendToDiscord("playerleave", {
+        self:SendToDiscord("player", {
             sub = "leave",
             plyr = player:GetName(),
             sid = player:GetSteamId(),
