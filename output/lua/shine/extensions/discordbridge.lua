@@ -141,6 +141,7 @@ function Plugin:ClientConfirmConnect(client)
         local numPlayers = Server.GetNumPlayersTotal()
         local maxPlayers = Server.GetMaxPlayers()
         self:SendToDiscord("playerjoin", {
+            sub = "join",
             plyr = player:GetName(),
             sid = player:GetSteamId(),
             msg = "(" ..numPlayers .. "/" .. maxPlayers .. ")"
@@ -155,6 +156,7 @@ function Plugin:ClientDisconnect(client)
         local numPlayers = Server.GetNumPlayersTotal() - 1
         local maxPlayers = Server.GetMaxPlayers()
         self:SendToDiscord("playerleave", {
+            sub = "leave",
             plyr = player:GetName(),
             sid = player:GetSteamId(),
             msg = "(" ..numPlayers .. "/" .. maxPlayers .. ")"
@@ -172,28 +174,28 @@ function Plugin:SetGameState(GameRules, NewState, OldState)
     local playerCount = " (" .. numPlayers .. "/" .. maxPlayers .. ")"
 
     if self.Config.SendMapChange and CurState == 'NotStarted' and roundTime < 5 then
-        self:SendToDiscord("status", {msg = "Changed map to " .. mapName})
+        self:SendToDiscord("status", {sub = "changemap", msg = "Changed map to " .. mapName})
     end
 
     if self.Config.SendRoundWarmup and CurState == 'WarmUp' then
-        self:SendToDiscord("status", {msg = "WarmUp started on " .. mapName .. playerCount})
+        self:SendToDiscord("status", {sub = "warmup", msg = "WarmUp started on " .. mapName, pc = playerCount})
     end
 
     if self.Config.SendRoundPreGame and CurState == 'PreGame' then
-        self:SendToDiscord("status", {msg = "PreGame started on " .. mapName .. playerCount})
+        self:SendToDiscord("status", {sub = "pregame", msg = "PreGame started on " .. mapName, pc = playerCount})
     end
 
     if self.Config.SendRoundStart and CurState == 'Started' then
-        self:SendToDiscord("status", {msg = "Round started on " .. mapName .. playerCount})
+        self:SendToDiscord("status", {sub = "roundstart", msg = "Round started on " .. mapName, pc = playerCount})
     end
 
     if self.Config.SendRoundEnd then
         if CurState == 'Team1Won' then
-            self:SendToDiscord("status", {msg = "Marines won on " .. mapName .. playerCount})
+            self:SendToDiscord("status", {sub = "marinewin", msg = "Marines won on " .. mapName, pc = playerCount})
         elseif CurState == 'Team2Won' then
-            self:SendToDiscord("status", {msg = "Aliens won on " .. mapName .. playerCount})
+            self:SendToDiscord("status", {sub = "alienwin", msg = "Aliens won on " .. mapName, pc = playerCount})
         elseif CurState == 'Draw' then
-            self:SendToDiscord("status", {msg = "Draw on " .. mapName .. playerCount})
+            self:SendToDiscord("status", {sub = "draw", msg = "Draw on " .. mapName, pc = playerCount})
         end
     end
 end
