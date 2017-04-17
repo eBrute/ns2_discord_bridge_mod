@@ -15,6 +15,7 @@ Plugin.CheckConfigTypes = false --Should we check the types of values in the con
 Plugin.DefaultConfig = {
     DiscordBridgeURL = "",
     ServerIdentifier = "",
+    SendPlayerAllChat = true,
     SendPlayerJoin = true,
     SendPlayerLeave = true,
     SendMapChange = true,
@@ -188,7 +189,7 @@ end
 
 
 function Plugin:PlayerSay(client, message)
-	if not message.teamOnly and message.message ~= "" then
+	if not message.teamOnly and self.Config.SendPlayerAllChat and message.message ~= "" then
         local player = client:GetControllingPlayer()
         local payload = {
             plyr = player:GetName(),
