@@ -24,6 +24,7 @@ Plugin.DefaultConfig = {
     SendRoundStart = true,
     SendRoundEnd = true,
     SendAdminPrint = false,
+    MessageSendIntervall = 0.5,
 }
 
 
@@ -53,6 +54,8 @@ function Plugin:Initialise()
     Log("Discord Bridge Version %s loaded", Plugin.Version)
     self.StartTime = os.clock()
     self.lastGameStateChangeTime = Shared.GetTime()
+    self.lastChatMessageSendTime = os.clock()
+    self.queuedChatMessages = {}
 
     self:OpenConnection()
 
@@ -197,8 +200,18 @@ function Plugin:PlayerSay(client, message)
             team = player:GetTeamNumber(),
             msg = message.message
         }
-        self:SendToDiscord("chat", payload)
+        table.insert(self.queuedChatMessages, payload)
 	end
+end
+
+
+function Plugin:Think()
+    if #self.queuedChatMessages > 0 and  os.clock() > self.lastChatMessageSendTime + self.Config.MessageSendIntervall then
+        self.lastChatMessageSendTime = os.clock()
+        local payload = self.queuedChatMessages[1]
+        table.remove(self.queuedChatMessages, 1)
+        self:SendToDiscord("chat", payload)
+    end
 end
 
 
