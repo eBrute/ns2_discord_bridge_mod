@@ -24,7 +24,7 @@ Plugin.DefaultConfig = {
     SendRoundStart = true,
     SendRoundEnd = true,
     SendAdminPrint = false,
-    MessageSendIntervall = 0.5,
+    SpamMinIntervall = 1,
 }
 
 
@@ -167,7 +167,9 @@ function Plugin:ParseDiscordResponse(data)
         end
     end
 
-    return self:OpenConnection()
+    self:SimpleTimer( self.Config.SpamMinIntervall , function()
+        self:OpenConnection()
+    end)
 end
 
 
@@ -206,7 +208,7 @@ end
 
 
 function Plugin:Think()
-    if #self.queuedChatMessages > 0 and  os.clock() > self.lastChatMessageSendTime + self.Config.MessageSendIntervall then
+    if #self.queuedChatMessages > 0 and  os.clock() > self.lastChatMessageSendTime + self.Config.SpamMinIntervall then
         self.lastChatMessageSendTime = os.clock()
         local payload = self.queuedChatMessages[1]
         table.remove(self.queuedChatMessages, 1)
