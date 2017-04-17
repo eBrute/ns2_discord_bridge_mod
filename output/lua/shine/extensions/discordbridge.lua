@@ -5,7 +5,7 @@
 local Shine = Shine
 local Plugin = {}
 
-Plugin.Version = "2.3.1"
+Plugin.Version = "2.4.1"
 Plugin.HasConfig = true --Does this plugin have a config file?
 Plugin.ConfigName = "DiscordBridge.json" --What's the name of the file?
 Plugin.DefaultState = true --Should the plugin be enabled when it is first added to the config?
