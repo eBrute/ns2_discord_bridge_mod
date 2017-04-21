@@ -24,7 +24,7 @@ Plugin.DefaultConfig = {
     SendRoundStart = true,
     SendRoundEnd = true,
     SendAdminPrint = false,
-    SpamMinIntervall = 1,
+    SpamMinIntervall = 0.5,
 }
 
 
