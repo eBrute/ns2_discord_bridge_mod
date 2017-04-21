@@ -210,8 +210,7 @@ end
 function Plugin:Think()
     if #self.queuedChatMessages > 0 and  os.clock() > self.lastChatMessageSendTime + self.Config.SpamMinIntervall then
         self.lastChatMessageSendTime = os.clock()
-        local payload = self.queuedChatMessages[1]
-        table.remove(self.queuedChatMessages, 1)
+        local payload = table.remove(self.queuedChatMessages, 1)
         self:SendToDiscord("chat", payload)
     end
 end
