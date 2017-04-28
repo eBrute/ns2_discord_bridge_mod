@@ -5,7 +5,7 @@
 local Shine = Shine
 local Plugin = {}
 
-Plugin.Version = "2.4.1"
+Plugin.Version = "2.4.2"
 Plugin.HasConfig = true --Does this plugin have a config file?
 Plugin.ConfigName = "DiscordBridge.json" --What's the name of the file?
 Plugin.DefaultState = true --Should the plugin be enabled when it is first added to the config?
@@ -173,18 +173,15 @@ function Plugin:ParseDiscordResponse(data)
 end
 
 
+local function responseParser(data)
+    Plugin:ParseDiscordResponse(data)
+end
+
+
 function Plugin:SendToDiscord(type, payload)
-    local params = {
-        id = self.Config.ServerIdentifier,
-        type = type,
-    }
-    for k, v in pairs(payload) do
-        params[k] = v
-    end
-    local function responseParser(data)
-        Plugin.ParseDiscordResponse(self, data)
-    end
-    Shared.SendHTTPRequest( self.Config.DiscordBridgeURL, "POST", params, responseParser)
+    payload.id = self.Config.ServerIdentifier
+    payload.type = type
+    Shared.SendHTTPRequest( self.Config.DiscordBridgeURL, "POST", payload, responseParser)
 end
 
 
