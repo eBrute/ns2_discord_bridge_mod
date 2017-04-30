@@ -5,7 +5,7 @@
 local Shine = Shine
 local Plugin = {}
 
-Plugin.Version = "2.4.2"
+Plugin.Version = "3.0.0"
 Plugin.HasConfig = true --Does this plugin have a config file?
 Plugin.ConfigName = "DiscordBridge.json" --What's the name of the file?
 Plugin.DefaultState = true --Should the plugin be enabled when it is first added to the config?
@@ -26,6 +26,8 @@ Plugin.DefaultConfig = {
     SendAdminPrint = false,
     SpamMinIntervall = 0.5,
 }
+
+local fieldSep = ""
 
 
 function Plugin:Initialise()
@@ -156,8 +158,14 @@ function Plugin:ParseDiscordResponse(data)
         return
     end
 
-    local response, _, err = json.decode(data, 1, nil)
-    if not err and response.type then
+    local fields = StringSplit(data, fieldSep)
+    if #fields == 3 then
+        local response = {
+            type = fields[1],
+            user = fields[2],
+            msg  = fields[3],
+        }
+
         local ResponseHandler = self.ResponseHandlers[response.type]
         if ResponseHandler then
             sendsResponse = ResponseHandler(self, response)
@@ -165,6 +173,9 @@ function Plugin:ParseDiscordResponse(data)
         else
             Log("unknown response type %s", response.type)
         end
+    else
+        Log("discordbridge: unknown response: >" .. data .. "<")
+        return
     end
 
     self:SimpleTimer( self.Config.SpamMinIntervall , function()
