@@ -30,10 +30,21 @@ function Plugin:Initialise()
 			function ServerAdminPrint(client, message)
 				old(client, message)
 				if self.Enabled then
-					self:SendToDiscord(self, "adminprint", message)
+					self:SendToDiscord("adminprint", message)
 				end
 			end
 		end)
+	end
+
+	local old = Server.StartWorld
+	function Server.StartWorld(mods, mapname)
+		if self.Enabled then
+			local numPlayers  = Server.GetNumPlayersTotal()
+			local maxPlayers  = Server.GetMaxPlayers()
+			local playerCount = numPlayers .. "/" .. maxPlayers
+			self:SendToDiscord("changemap", mapname, playerCount)
+		end
+		old(mods, mapname)
 	end
 
 	self.StartTime = os.clock()
@@ -75,7 +86,7 @@ local function CollectActiveMods()
 	return modIds
 end
 
-function Plugin:HandleDiscordInfoMessage(data)
+function Plugin:HandleDiscordInfoMessage()
 	local gameTime = Shared.GetTime() - self.lastGameStateChangeTime
 
 	local teams = {}
@@ -109,7 +120,7 @@ function Plugin:HandleDiscordInfoMessage(data)
 
 	local jsonData, jsonError = json.encode( message )
 	if jsonData and not jsonError then
-		self:SendToDiscord("info", data.msg, jsonData)
+		self:SendToDiscord("info", jsonData)
 	end
 
 	return true
@@ -126,7 +137,7 @@ function Plugin:SendToDiscord(type, ...)
 		message = message .. fieldSep .. select(i, ...)
 	end
 
-	Notify(message)
+	Message(message)
 end
 
 function Plugin:PlayerSay(client, message)
@@ -163,18 +174,29 @@ function Plugin:ClientDisconnect(client)
 	end
 end
 
-
-function Plugin:SetGameState(_, CurState)
-	CurState = kGameState[CurState]
-	local mapName = "'" .. Shared.GetMapName() .. "'"
+local function UpdateGameState()
+	local CurState = kGameState[GetGamerules():GetGameState()]
 	local numPlayers = Server.GetNumPlayersTotal()
 	local maxPlayers = Server.GetMaxPlayers()
 	local roundTime = Shared.GetTime()
 	local playerCount = numPlayers .. "/" .. maxPlayers
 
+	Plugin:SendToDiscord("status", CurState, Shared.GetMapName(), playerCount)
+	Plugin.gamestate_timer = nil
+end
+
+
+function Plugin:SetGameState(_, CurState)
 	self.lastGameStateChangeTime = Shared.GetTime()
 
-	self:SendToDiscord("status", CurState, mapName, playerCount)
+	local timer = self.gamestate_timer
+	if not timer then
+		self.gamestate_timer = self:SimpleTimer(1, UpdateGameState)
+	end
+end
+
+function Plugin:MapPostLoad()
+	self:SendToDiscord("init", Shared.GetMapName())
 end
 
 Shine:RegisterExtension("discordbridge", Plugin)
