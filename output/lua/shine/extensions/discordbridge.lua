@@ -47,21 +47,32 @@ function Plugin:Initialise()
 		old(mods, mapname)
 	end
 
-	self.StartTime = os.clock()
+	local hooks = debug.getregistry()["Event.HookTable"]
+	Log("hooks.WebRequest: %s", hooks.WebRequest)
+	local old
+	if hooks.WebRequest and #hooks.WebRequest > 0 then
+		old = hooks.WebRequest[1]
+	else
+		old = function() end
+	end
+
+	Event.Hook("WebRequest", function(actions)
+		Log("web request: %s", actions)
+		if     actions.request == "discordsend" then
+			Shine:NotifyDualColour(nil, 114, 137, 218, "(Discord) " .. actions.user .. ":", 181, 172, 229, actions.msg)
+		elseif actions.request == "discordinfo" then
+			return Plugin:HandleDiscordInfoMessage()
+		elseif actions.command then
+			Shared.ConsoleCommand(actions.command)
+		else
+			return old(actions)
+		end
+	end)
+
 	self.lastGameStateChangeTime = Shared.GetTime()
-	self.lastChatMessageSendTime = os.clock()
 
 	self.Enabled = true
 	return self.Enabled
-end
-
-
-function Plugin:HandleDiscordChatMessage(data)
-	local chatMessage = string.UTF8Sub(data.msg, 1, kMaxChatLength)
-	if not chatMessage or string.len(chatMessage) <= 0 then return end
-	local playerName = data.user
-	if not playerName then return end
-	Shine:NotifyDualColour(nil, 114, 137, 218, "(Discord) " .. playerName .. ":", 181, 172, 229, chatMessage)
 end
 
 function Server.GetActiveModTitle(activeModNum)
@@ -118,12 +129,7 @@ function Plugin:HandleDiscordInfoMessage()
 		teams = teams,
 	}
 
-	local jsonData, jsonError = json.encode( message )
-	if jsonData and not jsonError then
-		self:SendToDiscord("info", jsonData)
-	end
-
-	return true
+	return json.encode(message)
 end
 
 Plugin.ResponseHandlers = {
@@ -154,9 +160,7 @@ end
 
 
 function Plugin:ClientConfirmConnect(client)
-	if self.Config.SendPlayerJoin
-		and (os.clock() - self.StartTime) > 120 -- prevent overflow
-	then
+	if self.Config.SendPlayerJoin and Shared.GetTime() > 60 then -- don't show when players join within 60 seconds of map change
 		local player = client:GetControllingPlayer()
 		local numPlayers = Server.GetNumPlayersTotal()
 		local maxPlayers = Server.GetMaxPlayers()
