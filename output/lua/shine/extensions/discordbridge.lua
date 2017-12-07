@@ -48,7 +48,6 @@ function Plugin:Initialise()
 	end
 
 	local hooks = debug.getregistry()["Event.HookTable"]
-	Log("hooks.WebRequest: %s", hooks.WebRequest)
 	local old
 	if hooks.WebRequest and #hooks.WebRequest > 0 then
 		old = hooks.WebRequest[1]
@@ -57,7 +56,6 @@ function Plugin:Initialise()
 	end
 
 	Event.Hook("WebRequest", function(actions)
-		Log("web request: %s", actions)
 		if     actions.request == "discordsend" then
 			Shine:NotifyDualColour(nil, 114, 137, 218, "(Discord) " .. actions.user .. ":", 181, 172, 229, actions.msg)
 		elseif actions.request == "discordinfo" then
