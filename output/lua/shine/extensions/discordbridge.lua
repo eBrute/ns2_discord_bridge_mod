@@ -25,16 +25,17 @@ local fieldSep = ""
 
 function Plugin:Initialise()
 	if self.Config.SendAdminPrint then
-		self:SimpleTimer( 0.5, function()
-			self.OldServerAdminPrint = ServerAdminPrint
+		self:SimpleTimer(0.5, function()
+			local old = ServerAdminPrint
 			function ServerAdminPrint(client, message)
-				self.OldServerAdminPrint(client, message)
-				Plugin.SendToDiscord(self, "adminprint", message)
+				old(client, message)
+				if self.Enabled then
+					self:SendToDiscord(self, "adminprint", message)
+				end
 			end
 		end)
 	end
 
-	Log("Discord Bridge Version %s loaded", Plugin.Version)
 	self.StartTime = os.clock()
 	self.lastGameStateChangeTime = Shared.GetTime()
 	self.lastChatMessageSendTime = os.clock()
@@ -175,16 +176,5 @@ function Plugin:SetGameState(_, CurState)
 
 	self:SendToDiscord("status", CurState, mapName, playerCount)
 end
-
-
-function Plugin:Cleanup()
-	if self.Config.SendAdminPrint then
-		ServerAdminPrint = self.OldServerAdminPrint
-	end
-
-	self.BaseClass.Cleanup( self )
-	self.Enabled = false
-end
-
 
 Shine:RegisterExtension("discordbridge", Plugin)
