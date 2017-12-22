@@ -53,7 +53,7 @@ function Plugin:Initialise()
 		if	   actions.request == "discordsend" then
 			Shine:NotifyDualColour(nil, 114, 137, 218, "(Discord) " .. actions.user .. ":", 181, 172, 229, actions.msg)
 		elseif actions.request == "discordinfo" then
-			return Plugin:HandleDiscordInfoMessage()
+			return "application/json", Plugin:HandleDiscordInfoMessage()
 		elseif actions.rcon then
 			Shared.ConsoleCommand(actions.rcon)
 		else
