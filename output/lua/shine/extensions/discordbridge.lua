@@ -47,25 +47,28 @@ function Plugin:Initialise()
 		old(mods, mapname)
 	end
 
-	local hooks = debug.getregistry()["Event.HookTable"]
-	local old
-	if hooks.WebRequest and #hooks.WebRequest > 0 then
-		old = hooks.WebRequest[1]
-	else
-		old = function() end
-	end
+	local old = function() end
 
 	Event.Hook("WebRequest", function(actions)
-		if     actions.request == "discordsend" then
+		if	   actions.request == "discordsend" then
 			Shine:NotifyDualColour(nil, 114, 137, 218, "(Discord) " .. actions.user .. ":", 181, 172, 229, actions.msg)
 		elseif actions.request == "discordinfo" then
 			return Plugin:HandleDiscordInfoMessage()
-		elseif actions.command then
-			Shared.ConsoleCommand(actions.command)
+		elseif actions.rcon then
+			Shared.ConsoleCommand(actions.rcon)
 		else
 			return old(actions)
 		end
 	end)
+
+	local old_Hook = Event.Hook
+	function Event.Hook(t, f, ...)
+		if t == "WebRequest" then
+			old = f
+		else
+			return old_Hook(t, f, ...)
+		end
+	end
 
 	self.lastGameStateChangeTime = Shared.GetTime()
 
